@@ -68,7 +68,7 @@ export const login = async (req, res) => {
             profile: user.profile
         }
 
-        return res.status(200).cookie("token", token, {maxAge : 1* 24* 60* 60* 1000, httpOnly: true, sameSite: strict}).json({message: `Login successful ${user.fullname}`, user, success: true, token });
+        return res.status(200).cookie("token", token, {maxAge : 1* 24* 60* 60* 1000, httpOnly: true, sameSite: "Strict"}).json({message: `Login successful ${user.fullname}`, user, success: true, token });
 
     }
     catch (error) {
@@ -91,15 +91,13 @@ export const updateProfile = async (req, res) => {
     try {
         const { fullname, email, phoneNumber, bio, skills } = req.body;
         const file = req.file;
-        if (!fullname || !email || !phoneNumber || !bio || !skills){
-            return res.status(404).json({
-                message : "missing required fields",
-                success : false,
-            });
-        }
 
-        //cloudinary upload        
-        const skillsArray = skills.split(",");
+        //cloudinary upload   
+// 1. Safe parsing of skills string to array
+        let skillsArray;
+        if (skills && typeof skills === "string") {
+            skillsArray = skills.split(",");
+        }
         const userId = req.id; //middleware
         let user = await User.findById (userId)
         if (!user){
@@ -108,15 +106,17 @@ export const updateProfile = async (req, res) => {
                 success : false
             })
         }
-        user.fullname = fullname;
-        user.email = email;
-        user.phoneNumber = phoneNumber;
-        user.bio = bio;
-        user.skills = skillsArray;
+        if (fullname) user.fullname = fullname;
+        if (email) user.email = email;
+        if (phoneNumber) user.phoneNumber = phoneNumber;
+        if (bio) user.profile.bio = bio;
 
+        if (skillsArray) {
+            user.profile.skills = skillsArray;
+        }
         await user.save();
 
-        const User = {
+        const updatedUser = {
             _id: user._id,
             fullname: user.fullname,
             email: user.email,
@@ -127,7 +127,7 @@ export const updateProfile = async (req, res) => {
 
         return res.status(200).json({
             message: "Profile updated successfully",
-            user: User,
+            user: updatedUser,
             success: true,
         });
     }catch(err){
