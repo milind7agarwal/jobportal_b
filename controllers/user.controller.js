@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export const register = async (req, res) => {
     try {
@@ -21,9 +22,11 @@ export const register = async (req, res) => {
             password: hashedPassword,
             role,
         });
+        await newUser.save();
+        return res.status(201).json({ message: `${fullname} registered successfully`, success: true });
     }catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Server error", success: false });
+        res.status(500).json({ message: "Server error register", success: false });
     }
 }
 
@@ -33,7 +36,7 @@ export const login = async (req, res) => {
         if (!email || !password || !role) {
             return res.status(400).json({ message: "missing required fields", success: false });
         }
-        const user = await User.findOne({ email });
+        let user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: "Invalid credentials", success: false });
         }
@@ -49,9 +52,89 @@ export const login = async (req, res) => {
                 success: false,
             });
         }
+
+        const tokenData = {
+            userId: user._id,
+        };
+        const token = await jwt.sign(tokenData, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+
+        user = {
+            _id: user._id,
+            fullname: user.fullname,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            role: user.role,
+            profile: user.profile
+        }
+
+        return res.status(200).cookie("token", token, {maxAge : 1* 24* 60* 60* 1000, httpOnly: true, sameSite: strict}).json({message: `Login successful ${user.fullname}`, user, success: true, token });
+
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Server error", success: false });
+        res.status(500).json({ message: "Server error login failed", success: false });
+    }  
+}
+
+export const logout = async (req,res) => {
+    try {
+        return res.status(200).cookie("token", "", { maxAge: 0 }).json({ message: "Logout successful", success: true });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error logout", success: false });
+    }
+}
+
+export const updateProfile = async (req, res) => {
+    try {
+        const { fullname, email, phoneNumber, bio, skills } = req.body;
+        const file = req.file;
+        if (!fullname || !email || !phoneNumber || !bio || !skills){
+            return res.status(404).json({
+                message : "missing required fields",
+                success : false,
+            });
+        }
+
+        //cloudinary upload        
+        const skillsArray = skills.split(",");
+        const userId = req.id; //middleware
+        let user = await User.findById (userId)
+        if (!user){
+            return res.status(404).json({
+                message : "user not found",
+                success : false
+            })
+        }
+        user.fullname = fullname;
+        user.email = email;
+        user.phoneNumber = phoneNumber;
+        user.bio = bio;
+        user.skills = skillsArray;
+
+        await user.save();
+
+        const User = {
+            _id: user._id,
+            fullname: user.fullname,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            role: user.role,
+            profile: user.profile,
+        };
+
+        return res.status(200).json({
+            message: "Profile updated successfully",
+            user: User,
+            success: true,
+        });
+    }catch(err){
+        console.log(err)
+        res.status(500).json({
+            message : "server error update profile",
+            success : false
+        })
     }
 }
