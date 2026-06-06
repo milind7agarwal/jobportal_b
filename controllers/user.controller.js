@@ -91,7 +91,6 @@ export const updateProfile = async (req, res) => {
     try {
         const { fullname, email, phoneNumber, bio, skills } = req.body;
         const file = req.file;
-
         //cloudinary upload   
 // 1. Safe parsing of skills string to array
         let skillsArray;
