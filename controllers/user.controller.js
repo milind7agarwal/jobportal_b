@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import getDataUri from "../utils/datauri.js";
+import cloudinary from "../utils/cloud.js";
 
 export const register = async (req, res) => {
     try {
@@ -12,6 +14,11 @@ export const register = async (req, res) => {
         if (user) {
             return res.status(400).json({ message: "User already exists", success: false });
         }
+        const file = req.file;
+
+
+        const fileUri = getDataUri(file);
+        const cloudResponse = await cloudinary.uploader.upload(fileUri.content);
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -21,6 +28,9 @@ export const register = async (req, res) => {
             phoneNumber,
             password: hashedPassword,
             role,
+            profile: {
+            profilePicture : cloudResponse.secure_url,
+            },
         });
         await newUser.save();
         return res.status(201).json({ message: `${fullname} registered successfully`, success: true });
@@ -92,7 +102,11 @@ export const updateProfile = async (req, res) => {
         const { fullname, email, phoneNumber, bio, skills } = req.body;
         const file = req.file;
         //cloudinary upload   
-// 1. Safe parsing of skills string to array
+        const fileUri = getDataUri(file);
+        const cloudResponse = await cloudinary.uploader.upload(fileUri.content, {resource_type: "auto"});
+
+
+        // 1. Safe parsing of skills string to array
         let skillsArray;
         if (skills && typeof skills === "string") {
             skillsArray = skills.split(",");
@@ -109,6 +123,10 @@ export const updateProfile = async (req, res) => {
         if (email) user.email = email;
         if (phoneNumber) user.phoneNumber = phoneNumber;
         if (bio) user.profile.bio = bio;
+        if (cloudResponse){
+            user.profile.resume = cloudResponse.secure_url;
+            user.profile.resumeOriginalName = file.originalname;
+        }
 
         if (skillsArray) {
             user.profile.skills = skillsArray;
