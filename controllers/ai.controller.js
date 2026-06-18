@@ -124,7 +124,7 @@ export const getAllReport = async (req, res) => {
     try {
         const interviewReports = await interviewReportModel.find({ user: req.id })
             .sort({ createdAt: -1 })
-            .select("-resume -selfDescription -jobDescription -__v -technicalQuestions -behavioralQuestions -skillGaps -preparationPlan");
+            .select("-resume -selfDescription -__v -technicalQuestions -behavioralQuestions -skillGaps -preparationPlan");
 
         return res.status(200).json({
             message: "Interview reports fetched successfully.",
