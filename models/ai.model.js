@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-
 const technicalQuestionSchema = new mongoose.Schema({
     question: {
         type: String,
@@ -86,17 +85,10 @@ const interviewReportSchema = new mongoose.Schema({
     preparationPlan: [ preparationPlanSchema ],
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "users"
     },
-    title: {
-        type: String,
-        required: [ true, "Job title is required" ]
-    }
 }, {
     timestamps: true
 })
 
-
-const interviewReportModel = mongoose.model("InterviewReport", interviewReportSchema);
-
-export default interviewReportModel;  
+export const interviewReportModel  = mongoose.model("InterviewReport", interviewReportSchema);
