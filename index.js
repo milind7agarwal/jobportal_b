@@ -55,17 +55,6 @@ app.use('/api/job', jobRoutes);
 app.use('/api/application', applicationRoutes);
 app.use('/api/ai', aiRoutes);
 
-
-//----------------code for deployment--------------------------
-if(process.env.NODE_ENV === "production"){
-  const dirpath = path.resolve();
-  app.use(express.static('./frontend/dist'));
-
-  app.get('*', (req,res) => {
-    res.sendFile(path.resolve(dirpath, './frontend/dist', 'index.html' ))
-  })
-}
-
 const PORT = process.env.PORT;   
 
 app.listen(PORT, () => {
