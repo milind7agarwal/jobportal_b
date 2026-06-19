@@ -47,11 +47,48 @@ export const generateInterViewReportController = async (req, res) => {
             }
         }
 
-        const interViewReportByAi = await generateInterviewReport({
+        const cacheKeyInput = JSON.stringify({
             resume: resumeText,
             selfDescription,
-            jobDescription
+            jobDescription,
+            // cache per user to avoid leaking prompt content between users in shared cache
+            user: req.id,
         });
+
+
+        const { sha256 } = await import("../utils/hash.js");
+        const { getCachedReport, setCachedReport } = await import("../services/aiCache.js");
+        const { enqueue } = await import("../services/aiQueue.js");
+
+        const cacheKey = sha256(cacheKeyInput);
+
+        const cached = getCachedReport(cacheKey);
+
+        if (cached) {
+            const interviewReport = await interviewReportModel.create({
+                user: req.id,
+                resume: resumeText,
+                selfDescription,
+                jobDescription,
+                ...cached
+            });
+
+            return res.status(201).json({
+                message: "Interview report fetched from cache.",
+                interviewReport,
+                status: true,
+            });
+        }
+
+        const interViewReportByAi = await enqueue(() =>
+            generateInterviewReport({
+                resume: resumeText,
+                selfDescription,
+                jobDescription
+            })
+        );
+
+        setCachedReport(cacheKey, interViewReportByAi);
 
         const interviewReport = await interviewReportModel.create({
             user: req.id,
@@ -64,7 +101,7 @@ export const generateInterViewReportController = async (req, res) => {
         return res.status(201).json({
             message: "Interview report generated successfully.",
             interviewReport,
-            status: true
+            status: true,
         });
     } catch (error) {
         console.error("CONTROLLER ERROR", error);
