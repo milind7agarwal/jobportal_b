@@ -33,7 +33,7 @@ const corsOptions = {
   // set FRONTEND_ORIGINS as a comma-separated list, e.g.
   // FRONTEND_ORIGINS=https://yourdomain.com,http://localhost:5173
   origin: (origin, callback) => {
-    const allowed = (process.env.FRONTEND_ORIGINS || "http://localhost:5173")
+    const allowed = (process.env.FRONTEND_ORIGINS)
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
