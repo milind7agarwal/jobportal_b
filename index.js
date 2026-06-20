@@ -30,10 +30,12 @@ app.use('/api/application', authLimiter);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    const allowed = (process.env.FRONTEND_ORIGINS)
+    // Add all frontend origins that should be allowed to send cookies
+    const allowed = (process.env.FRONTEND_ORIGINS || "http://localhost:5173")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
+
 
     // allow non-browser requests (no origin)
     if (!origin) return callback(null, true);
@@ -46,6 +48,10 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Helpful for debugging cookie issues (prints parsed cookies)
+// Remove in production
+// app.use((req,res,next)=>{ if (req.path.startsWith('/api/job') || req.path.startsWith('/api/application') || req.path.startsWith('/api/users')) console.log('cookies:', req.cookies); next(); });
+
 app.use('/api/users', userRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/job', jobRoutes);
@@ -55,6 +61,6 @@ app.use('/api/ai', aiRoutes);
 const PORT = process.env.PORT;   
 
 app.listen(PORT, () => {
-    connectDB();
+  connectDB();
   console.log(`Server is running on port ${PORT}`);
 });

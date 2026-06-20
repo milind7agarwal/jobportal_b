@@ -78,7 +78,16 @@ export const login = async (req, res) => {
             profile: user.profile
         }
 
-        return res.status(200).cookie("token", token, {maxAge : 1* 24* 60* 60* 1000, httpOnly: true, sameSite: "Strict"}).json({message: `Login successful ${user.fullname}`, user, success: true, token });
+return res
+            .status(200)
+            .cookie("token", token, {
+                maxAge: 1 * 24 * 60 * 60 * 1000,
+                httpOnly: true,
+                // Must allow cross-site cookie when frontend and backend are on different domains
+                sameSite: "none",
+                secure: true,
+            })
+            .json({ message: `Login successful ${user.fullname}`, user, success: true, token });
 
     }
     catch (error) {
