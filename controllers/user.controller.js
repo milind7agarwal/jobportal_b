@@ -83,7 +83,6 @@ return res
             .cookie("token", token, {
                 maxAge: 1 * 24 * 60 * 60 * 1000,
                 httpOnly: true,
-                // Must allow cross-site cookie when frontend and backend are on different domains
                 sameSite: "none",
                 secure: true,
             })

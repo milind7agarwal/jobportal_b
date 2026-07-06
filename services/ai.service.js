@@ -41,6 +41,8 @@ Job Description: ${jobDescription}
 `;
 
         const ai = getAiClient();
+
+        const start = Date.now();
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
@@ -49,6 +51,9 @@ Job Description: ${jobDescription}
                 responseSchema: z.toJSONSchema(interviewReportSchema),
             }
         });
+        const duration = (Date.now() - start) / 1000;
+        console.log(`Gemini Response time: ${duration}s`);
+
 
         const responseText = response.text;
 
